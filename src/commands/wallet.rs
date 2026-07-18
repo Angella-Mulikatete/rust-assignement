@@ -5,22 +5,32 @@ use crate::error::AppResult;
 use crate::rpc::RpcClient;
 
 #[derive(Deserialize, Debug)]
-pub struct WalletInfo {
+struct WalletInfoRaw {
     #[serde(rename = "walletname")]
-    pub wallet_name: String,
-    pub balance: f64,
-    pub unconfirmed_balance: f64,
+    wallet_name: String,
     #[serde(rename = "txcount")]
-    pub tx_count: u64,
+    tx_count: u64,
+}
+
+#[derive(Deserialize, Debug)]
+struct BalancesMine {
+    trusted: f64,
+    untrusted_pending: f64,
+}
+
+#[derive(Deserialize, Debug)]
+struct Balances {
+    mine: BalancesMine,
 }
 
 pub fn wallet_info(client: &RpcClient) -> AppResult<()> {
-    let info: WalletInfo = client.call_typed("getwalletinfo", json!([]))?;
+    let info: WalletInfoRaw = client.call_typed("getwalletinfo", json!([]))?;
+    let balances: Balances = client.call_typed("getbalances", json!([]))?;
 
-    println!("Wallet name:        {}", info.wallet_name);
-    println!("Balance:            {} BTC", info.balance);
-    println!("Unconfirmed balance:{} BTC", info.unconfirmed_balance);
-    println!("Transaction count:  {}", info.tx_count);
+    println!("Wallet name:         {}", info.wallet_name);
+    println!("Balance:             {} BTC", balances.mine.trusted);
+    println!("Unconfirmed balance: {} BTC", balances.mine.untrusted_pending);
+    println!("Transaction count:   {}", info.tx_count);
 
     Ok(())
 }
